@@ -3,9 +3,13 @@ require 'job'
 require 'garden'
 
 function love.load()
+	-- Canvas setup
+	cvsWidth  = love.graphics.getWidth()
+	cvsHeight = love.graphics.getHeight()
 
-	cvsWidth  = love.window.getWidth()
-	cvsHeight = love.window.getHeight()
+	-- Joystick setup
+	local joysticks = love.joystick.getJoysticks()
+    joystick = joysticks[1]
 
 	-- player setup
 	player			 = {}

@@ -5,14 +5,14 @@ grass_controller.cuts 	= {}
 grass_controller.image  = love.graphics.newImage("images/cut.png")
 
 	-- Level setup
-level_controller 			  = {}
-level_controller.currentLevel = 1
-levels 		  	 			  = {}
-levels.level1 	 			  = { 0, -1, -1, -1, -1,  1, -1, -1,  1,  3 }
-levels.level2 			      = { 0, -1,  1, -1, -1,  1, -1, -1,  1,  3 }
-levels.level3				  = { 0,  1, -1,  1, -1, -1,  1,  2, -2,  3 }
-levels.level4	 			  = { 0,  2, -1,  2, -1,  1,  1,  1,  1,  3 }
-levels.level5	 			  = { 0,  2,  1,  2,  1,  2,  1,  2,  1,  3 }
+ -- level_controller 			  = {}
+ -- level_controller.currentLevel = 1
+ -- levels 		  	 			  = {}
+ -- levels.level1 	 			  = { 0, -1, -1, -1, -1,  1, -1, -1,  1,  3 }
+ -- levels.level2 			      = { 0, -1,  1, -1, -1,  1, -1, -1,  1,  3 }
+ -- levels.level3				  = { 0,  1, -1,  1, -1, -1,  1,  2, -2,  3 }
+ -- levels.level4	 			  = { 0,  2, -1,  2, -1,  1,  1,  1,  1,  3 }
+ -- levels.level5	 			  = { 0,  2,  1,  2,  1,  2,  1,  2,  1,  3 }
 
 	-- Point to point collision detection
 function detectCollision(Player, entity)
@@ -22,6 +22,8 @@ function detectCollision(Player, entity)
 end
 
 	-- enemy_controller setup
+firstSpawn					   = true
+enemiesSpawned				   = 0
 nextEnemy					   = 1
 enemy_controller 		  	   = {}  -- Controls enemies
 enemy_controller.spawnTimer	   = 100 -- Countdown to next enemy spawn
@@ -49,8 +51,8 @@ function enemy_controller:spawn(enemyType)
 	if enemyType == 0 then
 			-- Boss spawn
 		enemy.image  	 = enemy_controller.bossImage
-		enemy.x 	 	 = 0
-		enemy.y 		 = cvsHeight
+		enemy.x 	 	 = 32
+		enemy.y 		 = cvsHeight -32
 		breadcrumb.x 	 = player.x
 		breadcrumb.y 	 = player.y
 		breadcrumb.timer = 50
@@ -58,14 +60,26 @@ function enemy_controller:spawn(enemyType)
 	elseif enemyType == 1 then
 			-- hedgehog spawn
 		enemy.image = enemy_controller.hedgehogImage
+		enemy.x = -15
+		enemy.y = love.math.random(8, cvsHeight-8)
 	elseif enemyType == 2 then
 			-- mole spawn
-		enemy.image = enemy_controller.moleImage1
+		enemy.image  = enemy_controller.moleImage1
+		enemy.image1 = enemy_controller.moleImage1
+		enemy.image2 = enemy_controller.moleImage2
+		enemy.image3 = enemy_controller.moleImage3
+		enemy.phase  = 1
+		enemy.x 	 = love.math.random(8, cvsWidth-8)
+		enemy.y 	 = love.math.random(8, cvsHeight-8)
 	end	
 
-	enemy.x = -15
-	enemy.y = love.math.random(1, 600)
+	table.insert(self.enemies, enemy)	
+	enemy_controller.timer = 250
+	
 end
+
+-- Returns the angle between two points.
+function math.angle(x1,y1, x2,y2) return math.atan2(y2-y1, x2-x1) end
 
 	--enemy update
 function enemy_controller:update()
@@ -77,19 +91,20 @@ function enemy_controller:update()
 				breadcrumb.y 	 = player.y
 				breadcrumb.timer = 50
 					-- movement
-					-- get thee angle between player and enemy
-				local angle = math.getAngle(enemy.x, enemy.y, breadcrumb.x, breadcrumb.y)
+					-- get the angle between player and enemy
+				local angle = math.angle(enemy.x, enemy.y, breadcrumb.x, breadcrumb.y)
 					-- determine how far to move
-				local dx = math.cos(angle) * (dt * e.speed)
-				local dy = math.sin(angle) * (dt * e.speed)
-			else
+				dx = math.cos(angle) * (e.speed)
+				dy = math.sin(angle) * (e.speed)
+
 					-- move
 				e.x = e.x + (dx/4)
 				e.y = e.y + (dy/4)
-					-- reset timer
+			else
+					-- Reduce timer
 				breadcrumb.timer = breadcrumb.timer - 1
 			end
-
+				
 		elseif e.type == 1 then -- hedgehog logic
 			if e.x < (cvsWidth + 16) then
 				e.x = e.x + 1
@@ -98,30 +113,29 @@ function enemy_controller:update()
 				enemy_controller:spawn(1)
 			end	
 		elseif e.type == 2 then -- mole logic
-
-		elseif e.type == 3 then -- level complete
-			-- Do score stuff
-
-			-- Advance level
-			if 	   currentLevel == 1 then
-				levelData = levels.level1
-			elseif currentLevel == 2 then
-				levelData = levels.level2
-			elseif currentLevel == 3 then
-			    levelData = levels.level3
-			elseif currentLevel == 4 then
-			    levelData = levels.level4
-			elseif currentLevel == 5 then
-			    levelData = levels.level5
-			end
+			-- Phase 1, 2, 3
+			-- Only phase 2 and 3 kill
+			if e.phase == 1 then
+				-- Just draw
+			elseif e.phase == 2 then
+				-- Change image
+				-- Draw and collision
+			elseif e.phase == 3 then
+				-- Change image
+				-- Draw and collision
+			else
+				-- Delete from table and replace
+			end		
 
 		end
+
+		-- Detect collision
 	end
 end
 
 function enemy_controller:draw()
 	for _,e in pairs(enemy_controller.enemies) do
-		print("drawing enemy")
+		-- print("drawing enemy")
 		love.graphics.draw(e.image, e.x, e.y)
 	end
 end
@@ -151,8 +165,8 @@ function powerUp_controller:spawn(powerUpType)
 		powerUp.image = powerUp_controller.moreMoney
 	end
 
-	powerUp.x = love.math.random(1, 700)
-	powerUp.y = love.math.random(1, 500)
+	powerUp.x = love.math.random(1, 650)
+	powerUp.y = love.math.random(1, 490)
 
 	table.insert(self.powerUps, powerUp)	
 	powerUp_controller.timer = 500
@@ -177,7 +191,7 @@ function powerUp_controller:update()
 			elseif p.type == 2 then
 					-- more money
 				player.money = player.money + 100
-				table.remove(self.powerUps, p)
+				table.remove(self.powerUps, p.self)
 			end
 		end
 	end
@@ -185,6 +199,7 @@ end
 
 function powerUp_controller:draw()
 	for _,p in pairs(powerUp_controller.powerUps) do
+		-- print("1")
 		love.graphics.draw(p.image, p.x, p.y)
 	end
 end
@@ -202,21 +217,21 @@ function jobState_load()
 	difficulty = 0
 
 	-- Sound and music
-	jobMusic = love.audio.newSource("sounds/Enchanted_Valley.mp3")
+	jobMusic = love.audio.newSource("sounds/music/Overworld.mp3")
 	playing = false
 end
 
 function jobState_update(dt)
 
 	if not playing then
-		--jobMusic:play()
+		jobMusic:play()
 		playing = true
 	end
 
 	--				CONTROLS
 
 	-- movement
-	if love.keyboard.isDown('up') and player.fuel > 0 then
+	if (love.keyboard.isDown('up') or joystick:isGamepadDown('dpup')) and player.fuel > 0 then
 
 		if ((math.sin(player.r) * player.speed * dt) > 0) then
 		    if player.x < (cvsWidth-32) then
@@ -242,7 +257,7 @@ function jobState_update(dt)
 		player.score = player.score + 1
 		player.fuel = player.fuel - 1
 
-	elseif love.keyboard.isDown('down') then
+	elseif (love.keyboard.isDown('down') or joystick:isGamepadDown('dpdown')) then
 
 		if ((math.sin(player.r) * player.speed * dt) > 0) then
 		    if player.x < (cvsWidth-32) then
@@ -272,15 +287,15 @@ function jobState_update(dt)
 
     -- Player turning
     if player.fuel > 0 then
-	    if love.keyboard.isDown('left') then
+	    if (love.keyboard.isDown('left') or joystick:isGamepadDown('dpleft')) then
 	    	player.r = player.r - .1
-	    elseif love.keyboard.isDown('right') then
+	    elseif (love.keyboard.isDown('right') or joystick:isGamepadDown('dpright')) then
 	    	player.r = player.r + .1
 		end
 	end
 
 	-- quit game
-	if love.keyboard.isDown('escape') then
+	if (love.keyboard.isDown('escape') or joystick:isGamepadDown('back')) then
 		love.event.quit()
 	end
 
@@ -289,28 +304,38 @@ function jobState_update(dt)
 	-- cut grass function call
 	grass_controller:cutGrass(player.x, player.y, player.r)
 
-	--				POWER UP UPDATE
+	--				POWER-UP UPDATE
 
 	-- power-up update
-	powerUp_controller:update(0)
+	powerUp_controller:update()
 
+	-- Alternate between power-up types
 	if powerUp_controller.timer <= 0 then
 		powerUp_controller:spawn(0)
+		powerUp_controller:spawn(love.math.random(0, 2))
 	else
 		powerUp_controller.timer = powerUp_controller.timer - 1
 	end
 
 	--				ENEMY UPDATE
 
+	enemy_controller:update()
+
 	-- spawn enemies and power-ups calls
 	if enemy_controller.spawnTimer <= 0 then
 
-		-- Spawn new enemy
-		enemy_controller:spawn(nextEnemy)
+		if firstSpawn == true then
+			enemy_controller:spawn(0)
+			firstSpawn = false
+		else
+			nextEnemy = love.math.random(1, 2)
+			enemy_controller:spawn(nextEnemy)
+		end
+
 		-- Set timer for next enemy spawn
 		enemy_controller.spawnTimer = 250
-		-- Increment nextEnemy
-		nextEnemy = nextEnemy + 1
+		-- Count spawned enemies
+		enemiesSpawned = enemiesSpawned + 1
 	else
 		-- Reduce spawn timer
 		enemy_controller.spawnTimer = enemy_controller.spawnTimer - 1        
@@ -367,7 +392,7 @@ function jobOver(type)
 	end
 
 	-- award the player for this round
-	player.finalScore = player.finalScore + player.score
+	player.finalScore = player.score
 	player.score = 0
 
 	--return to garden

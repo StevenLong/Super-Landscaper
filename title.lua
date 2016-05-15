@@ -4,10 +4,6 @@ function titleState_load()
 	-- Enter fullscreen
 	success = love.window.setFullscreen( true )
 
-	-- Title screen set up
-	-- Old titles
-	-- title1 	 = love.graphics.newImage("images/slTitle1.png")
-	-- title2 	 = love.graphics.newImage("images/slTitle2.png")
 	-- New title
 	titlePhase		= 0
 	titleDisplayed  = false
@@ -54,7 +50,7 @@ function titleDisplay()
 		end
 	elseif  titleDisplayed == false and titlePhase == 1 then
 
-		if (titleX < 0) then
+		if (titleX < -5) then
 			titleMusic:play()
 			titleX = titleX + 5
 		end
@@ -74,16 +70,16 @@ function titleState_update(dt)
 	end
 
 	-- Show instructions
-	if (love.keyboard.isDown('y') or joystick:isGamepadDown('y')) and showInstructions == false and keySpeedLimiter == 0 then
+	if (love.keyboard.isDown('y') or (joystick ~= nil and (joystick:isGamepadDown('y'))) and showInstructions == false and keySpeedLimiter == 0) then
 		showInstructions = true
 		keySpeedLimiter = 10
-	elseif (love.keyboard.isDown('h') or joystick:isGamepadDown('y')) and showInstructions == true and keySpeedLimiter == 0 then
+	elseif (love.keyboard.isDown('h') or (joystick ~= nil and (joystick:isGamepadDown('y'))) and showInstructions == true and keySpeedLimiter == 0) then
 		showInstructions = false
 		keySpeedLimiter = 10
 	end
 
 	-- Start game
-	if love.keyboard.isDown('return') or joystick:isGamepadDown('start') or joystick:isGamepadDown('a') then
+	if (love.keyboard.isDown('return')) or (joystick ~= null and (joystick:isGamepadDown('start') or joystick:isGamepadDown('a'))) then
 		introSound:stop() 
 		titleMusic:stop()
 		menuSelect:play()
